@@ -82,6 +82,21 @@ namespace :db do
       ::Rails::Mongoid.create_indexes("app/models/**/*.rb")
     end
 
+    desc 'Upload server-side javascripts from db/javascripts to mongo db.'
+    task :create_javascripts => :environment do
+      # Each file should define a single anonymous function.
+      # Those functions will be named according to their filename
+      # and can be accessed from within mongo's scripting contexts
+      # like $where, map/reduce, and db.eval.
+      Dir["#{Rails.root}/db/javascripts/**/*.js"].each do |js|
+        function_name = File.basename(js, ".js")
+        puts "Adding: #{function_name} from #{js.gsub("#{Rails.root}/", "")}"
+        src = File.read(js)
+        src.gsub!(%r{^\s*//.*$}, "") # Mongo seems to choke on C++ style line comments
+        Mongoid.master.add_stored_function(function_name, src)
+      end
+    end
+
     def convert_ids(obj)
       if obj.is_a?(String) && obj =~ /^[a-f0-9]{24}$/
         BSON::ObjectId(obj)
