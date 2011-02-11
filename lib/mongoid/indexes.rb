@@ -18,7 +18,7 @@ module Mongoid #:nodoc
         return unless index_options
         current_collection = self._collection || set_collection
         index_options.each_pair do |name, options|
-          current_collection.create_index(name, options)
+          current_collection.create_index(name, options.dup)
         end
       end
 
